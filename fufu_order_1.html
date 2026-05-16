@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>fufu 発注システム</title>
+<style>
+:root {
+  --bg:#F7F6F3; --white:#FFFFFF; --s2:#F0EEE9; --border:#E0DDD6;
+  --text:#1A1916; --text2:#6B6860; --accent:#1A1916;
+  --danger:#C0392B; --green:#27AE60; --r:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,'Hiragino Sans',sans-serif;background:var(--bg);color:var(--text);padding-bottom:90px;}
+.screen{display:none;} .screen.active{display:block;}
+
+/* HEADER */
+.hdr{background:var(--accent);color:#fff;padding:14px 16px 12px;position:sticky;top:0;z-index:100;}
+.hdr-top{display:flex;justify-content:space-between;align-items:center;}
+.hdr-brand{font-size:10px;letter-spacing:.15em;opacity:.5;text-transform:uppercase;}
+.hdr-title{font-size:18px;font-weight:700;}
+.hdr-upload{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;padding:6px 12px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap;}
+#fileInput{display:none;}
+
+
+.supplier-bar{background:var(--white);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:8px;}
+.supplier-label{font-size:11px;color:var(--text2);font-weight:500;white-space:nowrap;}
+.supplier-pills{display:flex;gap:6px;}
+.supplier-pill{padding:6px 16px;border-radius:20px;border:1.5px solid var(--border);font-size:13px;font-weight:500;cursor:pointer;background:var(--white);color:var(--text2);transition:all .15s;}
+.supplier-pill.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+/* STORE */
+.store-bar{background:var(--white);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:8px;position:sticky;top:52px;z-index:99;}
+.store-label{font-size:11px;color:var(--text2);font-weight:500;white-space:nowrap;}
+.store-pills{display:flex;gap:6px;}
+.store-pill{padding:6px 16px;border-radius:20px;border:1.5px solid var(--border);font-size:13px;font-weight:500;cursor:pointer;background:var(--white);color:var(--text2);transition:all .15s;}
+.store-pill.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+/* CATS */
+.cat-tabs{background:var(--white);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;scrollbar-width:none;padding:0 16px;position:sticky;top:98px;z-index:98;}
+.cat-tabs::-webkit-scrollbar{display:none;}
+.cat-tab{padding:12px 12px;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;white-space:nowrap;border-bottom:2.5px solid transparent;flex-shrink:0;}
+.cat-tab.active{color:var(--text);border-bottom-color:var(--text);font-weight:700;}
+.badge{display:inline-block;background:var(--danger);color:#fff;border-radius:10px;font-size:9px;padding:1px 5px;margin-left:4px;font-weight:700;}
+
+/* PRODUCTS */
+.product-list{padding:10px 16px;display:flex;flex-direction:column;gap:2px;}
+.maker-hdr{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);padding:10px 4px 5px;border-bottom:1px solid var(--border);margin-bottom:2px;}
+.product-row{display:flex;align-items:center;gap:10px;padding:9px 10px;background:var(--white);border-radius:8px;border:1px solid transparent;margin-bottom:2px;}
+.product-row.has-qty{border-color:var(--accent);background:#F8F7F5;}
+.product-name{font-size:13px;font-weight:500;flex:1;min-width:0;line-height:1.4;}
+.qty-wrap{display:flex;align-items:center;flex-shrink:0;}
+.qty-btn{width:34px;height:34px;border:1.5px solid var(--border);background:var(--white);border-radius:8px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);font-weight:300;user-select:none;-webkit-user-select:none;}
+.qty-btn:active{background:var(--s2);}
+.qty-input{width:44px;height:34px;border:1.5px solid var(--border);border-left:none;border-right:none;text-align:center;font-size:15px;font-weight:700;background:var(--white);color:var(--text);outline:none;-moz-appearance:textfield;}
+.qty-input::-webkit-outer-spin-button,.qty-input::-webkit-inner-spin-button{-webkit-appearance:none;}
+.unit-label{font-size:11px;color:var(--text2);margin-left:6px;min-width:24px;}
+
+/* BOTTOM BAR */
+.bottom-bar{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--border);padding:10px 16px;display:flex;gap:10px;z-index:200;box-shadow:0 -4px 16px rgba(0,0,0,.07);}
+.btn-clear{padding:12px 16px;border-radius:var(--r);border:1.5px solid var(--border);background:var(--white);color:var(--danger);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.btn-main{flex:1;padding:14px;border-radius:var(--r);border:none;background:var(--accent);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+.btn-main:disabled{background:var(--border);color:var(--text2);}
+.btn-green{background:var(--green)!important;}
+
+/* PAGE HEADER */
+.page-hdr{background:var(--white);border-bottom:1px solid var(--border);padding:14px 16px;position:sticky;top:0;z-index:100;}
+.page-hdr h2{font-size:16px;font-weight:700;}
+.page-hdr p{font-size:12px;color:var(--text2);margin-top:3px;}
+.page-body{padding:14px 16px 100px;}
+.page-actions{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--border);padding:10px 16px;display:flex;gap:10px;z-index:200;box-shadow:0 -4px 16px rgba(0,0,0,.07);}
+.btn-back{padding:12px 16px;border-radius:var(--r);border:1.5px solid var(--border);background:var(--white);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;}
+
+/* CONFIRM TABLE */
+.cat-block{margin-bottom:10px;}
+.cat-block-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);background:var(--s2);padding:7px 12px;border-radius:6px 6px 0 0;border:1px solid var(--border);border-bottom:none;}
+.conf-table{border:1px solid var(--border);border-radius:0 0 8px 8px;overflow:hidden;background:var(--white);}
+.conf-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);align-items:center;}
+.conf-row:last-child{border-bottom:none;}
+.conf-row.th{background:var(--s2);}
+.conf-row.th span{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text2);}
+.c-name{font-size:13px;font-weight:500;}
+.c-maker{font-size:10px;color:var(--text2);margin-top:1px;}
+.c-unit{font-size:10px;color:var(--text2);text-align:right;}
+.c-qty{font-size:17px;font-weight:700;text-align:right;}
+
+/* PDF PREVIEW */
+.print-hint{background:#FFF8E1;border:1px solid #FFE082;border-radius:8px;padding:12px 14px;margin-bottom:12px;font-size:12px;line-height:1.7;color:#5D4037;}
+.print-hint strong{display:block;margin-bottom:4px;font-size:13px;}
+.pdf-doc{background:var(--white);border-radius:var(--r);border:1px solid var(--border);overflow:hidden;}
+.pdf-doc-hdr{background:var(--accent);color:#fff;padding:14px 16px;}
+.pdf-doc-hdr h3{font-size:15px;font-weight:700;}
+.pdf-doc-hdr p{font-size:10px;opacity:.55;margin-top:2px;}
+.pdf-meta{display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border);}
+.pdf-meta-box{flex:1;background:var(--s2);border-radius:6px;padding:7px 10px;}
+.pdf-meta-box .lbl{font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);}
+.pdf-meta-box .val{font-size:11px;font-weight:700;margin-top:2px;}
+.pdf-tbl{width:100%;border-collapse:collapse;}
+.pdf-tbl th{padding:8px 10px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:#fff;background:#555250;border-bottom:1px solid var(--border);font-weight:600;}
+.pdf-tbl th.r{text-align:right;}
+.pdf-tbl td{padding:8px 10px;font-size:12px;border-bottom:1px solid var(--border);}
+.pdf-tbl td.r{text-align:right;}
+.pdf-tbl td.bold{font-weight:700;font-size:14px;}
+.pdf-tbl td.gray{color:var(--text2);font-size:10px;background:#F7F6F3;}
+.pdf-tbl .cat-row td{background:#ECEAE5;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);padding:5px 10px;}
+.pdf-tbl .total-row td{background:var(--s2);font-weight:700;border-bottom:none;}
+.pdf-footer{padding:10px 16px;font-size:9px;color:var(--text2);display:flex;justify-content:space-between;border-top:1px solid var(--border);}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:flex-end;}
+.modal-bg.show{display:flex;}
+.modal-box{background:var(--white);border-radius:16px 16px 0 0;padding:22px 18px 32px;width:100%;}
+.modal-title{font-size:15px;font-weight:700;margin-bottom:8px;}
+.modal-body{font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.6;}
+.modal-btns{display:flex;gap:10px;}
+.m-cancel{flex:1;padding:13px;border-radius:var(--r);border:1.5px solid var(--border);background:var(--white);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;}
+.m-do{flex:1;padding:13px;border-radius:var(--r);border:none;background:var(--danger);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+
+/* TOAST */
+.toast{position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-10px);background:var(--accent);color:#fff;padding:9px 18px;border-radius:20px;font-size:12px;font-weight:500;opacity:0;transition:all .25s;z-index:999;white-space:nowrap;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+@media print{
+  .page-actions,.bottom-bar,.print-hint,.page-hdr{display:none!important;}
+  .pdf-preview{padding:0!important;}
+  #pdfScreen{display:block!important;}
+  #inputScreen,#confirmScreen{display:none!important;}
+}
+</style>
+</head>
+<body>
+
+<!-- INPUT SCREEN -->
+<div id="inputScreen" class="screen active">
+  <div class="hdr">
+    <div class="hdr-top">
+      <div><div class="hdr-brand">fufu hair salon</div><div class="hdr-title">発注入力</div></div>
+      <label class="hdr-upload" for="fileInput">📋 マスタ更新</label>
+    </div>
+  </div>
+  <input type="file" id="fileInput" accept=".xlsx">
+  <div class="supplier-bar">
+    <span class="supplier-label">業者：</span>
+    <div class="supplier-pills">
+      <div class="supplier-pill" data-supplier="OCC">OCC</div>
+      <div class="supplier-pill" data-supplier="Loreal">L'Oréal</div>
+    </div>
+  </div>
+  <div class="store-bar">
+    <span class="store-label">店舗：</span>
+    <div class="store-pills">
+      <div class="store-pill" data-store="TL">TL</div>
+      <div class="store-pill" data-store="PP">PP</div>
+      <div class="store-pill" data-store="NG">NG</div>
+    </div>
+  </div>
+  <div class="cat-tabs" id="catTabs" style="display:none;"></div>
+  <div class="product-list" id="productList" style="display:none;"></div>
+  <div class="modal-bg" id="clearModal">
+    <div class="modal-box">
+      <div class="modal-title">数量をクリアしますか？</div>
+      <div class="modal-body">入力したすべての数量が削除されます。この操作は元に戻せません。</div>
+      <div class="modal-btns">
+        <button class="m-cancel" id="clearCancelBtn">キャンセル</button>
+        <button class="m-do" id="clearDoBtn">クリアする</button>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-bar">
+    <button class="btn-clear" id="clearBtn">クリア</button>
+    <button class="btn-main" id="confirmBtn" disabled>入力内容を確認 →</button>
+  </div>
+</div>
+
+<!-- CONFIRM SCREEN -->
+<div id="confirmScreen" class="screen">
+  <div class="page-hdr"><h2>発注内容確認</h2><p id="confirmSub"></p></div>
+  <div class="page-body" id="confirmBody"></div>
+  <div class="page-actions">
+    <button class="btn-back" id="backBtn">← 戻る</button>
+    <button class="btn-main btn-green" id="pdfBtn">📄 発注依頼書を作成</button>
+  </div>
+</div>
+
+<!-- PDF SCREEN -->
+<div id="pdfScreen" class="screen">
+  <div class="page-hdr"><h2>発注依頼書</h2><p id="pdfSub"></p></div>
+  <div class="page-body pdf-preview">
+    <div class="print-hint">
+      <strong>📱 PDF保存の手順</strong>
+      ①「印刷 / PDF保存」ボタンをタップ<br>
+      ② Safari：共有（□↑）→「印刷」→ピンチアウトして保存<br>
+      ② Chrome：右上メニュー →「共有」→「印刷」→ピンチアウトして保存
+    </div>
+    <div class="pdf-doc" id="pdfDoc"></div>
+  </div>
+  <div class="page-actions">
+    <button class="btn-back" id="pdfBackBtn">← 戻る</button>
+    <button class="btn-main" id="printBtn">🖨️ 印刷 / PDF保存</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+var PRODS = [
+["Hair coloring tube","DEMI","TOIROCTION 6BB","本"],["Hair coloring tube","DEMI","TOIROCTION 8BB","本"],["Hair coloring tube","DEMI","TOIROCTION 10BB","本"],["Hair coloring tube","DEMI","TOIROCTION 12BB","本"],["Hair coloring tube","DEMI","TOIROCTION 6CB","本"],["Hair coloring tube","DEMI","TOIROCTION 8CB","本"],["Hair coloring tube","DEMI","TOIROCTION 10CB","本"],["Hair coloring tube","DEMI","TOIROCTION 12CB","本"],["Hair coloring tube","DEMI","TOIROCTION 6CG","本"],["Hair coloring tube","DEMI","TOIROCTION 8CG","本"],["Hair coloring tube","DEMI","TOIROCTION 10CG","本"],["Hair coloring tube","DEMI","TOIROCTION 12CG","本"],["Hair coloring tube","DEMI","TOIROCTION 6CIP","本"],["Hair coloring tube","DEMI","TOIROCTION 8CIP","本"],["Hair coloring tube","DEMI","TOIROCTION 10CIP","本"],["Hair coloring tube","DEMI","TOIROCTION 6CP","本"],["Hair coloring tube","DEMI","TOIROCTION 8CP","本"],["Hair coloring tube","DEMI","TOIROCTION 10CP","本"],["Hair coloring tube","DEMI","TOIROCTION 12CP","本"],["Hair coloring tube","DEMI","TOIROCTION 6CaG","本"],["Hair coloring tube","DEMI","TOIROCTION 8CaG","本"],["Hair coloring tube","DEMI","TOIROCTION 10CaG","本"],["Hair coloring tube","DEMI","TOIROCTION 6CrB","本"],["Hair coloring tube","DEMI","TOIROCTION 8CrB","本"],["Hair coloring tube","DEMI","TOIROCTION 10CrB","本"],["Hair coloring tube","DEMI","TOIROCTION 12CrB","本"],["Hair coloring tube","DEMI","TOIROCTION 6FO","本"],["Hair coloring tube","DEMI","TOIROCTION 8FO","本"],["Hair coloring tube","DEMI","TOIROCTION 10FO","本"],["Hair coloring tube","DEMI","TOIROCTION 12FO","本"],["Hair coloring tube","DEMI","TOIROCTION 6HM","本"],["Hair coloring tube","DEMI","TOIROCTION 8HM","本"],["Hair coloring tube","DEMI","TOIROCTION 10HM","本"],["Hair coloring tube","DEMI","TOIROCTION 12HM","本"],["Hair coloring tube","DEMI","TOIROCTION 8IB","本"],["Hair coloring tube","DEMI","TOIROCTION 10IB","本"],["Hair coloring tube","DEMI","TOIROCTION 12IB","本"],["Hair coloring tube","DEMI","TOIROCTION 6LP","本"],["Hair coloring tube","DEMI","TOIROCTION 8LP","本"],["Hair coloring tube","DEMI","TOIROCTION 10LP","本"],["Hair coloring tube","DEMI","TOIROCTION 12LP","本"],["Hair coloring tube","DEMI","TOIROCTION 6LY","本"],["Hair coloring tube","DEMI","TOIROCTION 8LY","本"],["Hair coloring tube","DEMI","TOIROCTION 10LY","本"],["Hair coloring tube","DEMI","TOIROCTION 12LY","本"],["Hair coloring tube","DEMI","TOIROCTION 6MB","本"],["Hair coloring tube","DEMI","TOIROCTION 8MB","本"],["Hair coloring tube","DEMI","TOIROCTION 10MB","本"],["Hair coloring tube","DEMI","TOIROCTION 12MB","本"],["Hair coloring tube","DEMI","TOIROCTION 6PB","本"],["Hair coloring tube","DEMI","TOIROCTION 8PB","本"],["Hair coloring tube","DEMI","TOIROCTION 10PB","本"],["Hair coloring tube","DEMI","TOIROCTION 12PB","本"],["Hair coloring tube","DEMI","TOIROCTION 6PV","本"],["Hair coloring tube","DEMI","TOIROCTION 8PV","本"],["Hair coloring tube","DEMI","TOIROCTION 10PV","本"],["Hair coloring tube","DEMI","TOIROCTION 12PV","本"],["Hair coloring tube","DEMI","TOIROCTION 6SS","本"],["Hair coloring tube","DEMI","TOIROCTION 8SS","本"],["Hair coloring tube","DEMI","TOIROCTION 10SS","本"],["Hair coloring tube","DEMI","TOIROCTION 12SS","本"],["Hair coloring tube","DEMI","TOIROCTION 6WB","本"],["Hair coloring tube","DEMI","TOIROCTION 8WB","本"],["Hair coloring tube","DEMI","TOIROCTION 10WB","本"],["Hair coloring tube","DEMI","TOIROCTION 12WB","本"],["Hair coloring tube","DEMI","TOIROCTION D-4BB","本"],["Hair coloring tube","DEMI","TOIROCTION D-6BB","本"],["Hair coloring tube","DEMI","TOIROCTION D-7BB","本"],["Hair coloring tube","DEMI","TOIROCTION D-8BB","本"],["Hair coloring tube","DEMI","TOIROCTION D-9BB","本"],["Hair coloring tube","DEMI","TOIROCTION D-3CB","本"],["Hair coloring tube","DEMI","TOIROCTION D-4CB","本"],["Hair coloring tube","DEMI","TOIROCTION D-6CB","本"],["Hair coloring tube","DEMI","TOIROCTION D-8CB","本"],["Hair coloring tube","DEMI","TOIROCTION D-9CB","本"],["Hair coloring tube","DEMI","TOIROCTION D-4PB","本"],["Hair coloring tube","DEMI","TOIROCTION D-6PB","本"],["Hair coloring tube","DEMI","TOIROCTION D-7PB","本"],["Hair coloring tube","DEMI","TOIROCTION D-8PB","本"],["Hair coloring tube","DEMI","TOIROCTION D-9PB","本"],["Hair coloring tube","DEMI","TOIROCTION D-3WB","本"],["Hair coloring tube","DEMI","TOIROCTION D-4WB","本"],["Hair coloring tube","DEMI","TOIROCTION D-5WB","本"],["Hair coloring tube","DEMI","TOIROCTION D-6WB","本"],["Hair coloring tube","DEMI","TOIROCTION D-8WB","本"],["Hair coloring tube","DEMI","TOIROCTION D-9WB","本"],["Hair coloring tube","DEMI","TOIROCTION Blue","本"],["Hair coloring tube","DEMI","TOIROCTION CLEAR","本"],["Hair coloring tube","DEMI","TOIROCTION Green","本"],["Hair coloring tube","DEMI","TOIROCTION Navy","本"],["Hair coloring tube","DEMI","TOIROCTION Red","本"],["Hair coloring tube","DEMI","TOIROCTION Support Brown D","本"],["Hair coloring tube","DEMI","TOIROCTION Support Brown L","本"],["Hair coloring tube","DEMI","TOIROCTION Violet","本"],["Hair coloring tube","b-ex","THROW A/12","本"],["Hair coloring tube","b-ex","THROW A/14","本"],["Hair coloring tube","b-ex","THROW Be/10","本"],["Hair coloring tube","b-ex","THROW C/14","本"],["Hair coloring tube","b-ex","THROW M/12","本"],["Hair coloring tube","b-ex","THROW N/6","本"],["Hair coloring tube","b-ex","THROW N/10","本"],["Hair coloring tube","b-ex","THROW N/14","本"],["Hair coloring tube","b-ex","THROW SS/06","本"],["Hair coloring tube","b-ex","THROW SS/08","本"],["Hair coloring tube","b-ex","THROW SS/10","本"],["Hair coloring tube","b-ex","THROW DA/08","本"],["Hair coloring tube","b-ex","THROW DA/10","本"],["Hair coloring tube","b-ex","THROW Blue","本"],["Hair coloring tube","b-ex","THROW Smoke","本"],["Hair coloring tube","b-ex","KIRATЕРА BASIC LINE S-Milk tea 7","本"],["Hair coloring tube","b-ex","KIRATЕРА ON COLOR LINE D-RED","本"],["Hair coloring tube","b-ex","KIRATЕРА ON COLOR LINE F-PINK","本"],["Hair coloring tube","b-ex","KIRATЕРА ON COLOR LINE Pink","本"],["Hair coloring tube","b-ex","KIRATЕРА ON COLOR LINE Orange","本"],
+["Deoxide","b-ex","Cleanser","本"],["Deoxide","b-ex","b-bleach","本"],["Deoxide","DEMI","TOIROCTION OXY 3%","本"],["Deoxide","DEMI","TOIROCTION OXY 6%","本"],["Deoxide","DEMI","Tint-clear","本"],["Deoxide","Wella","Wella WLXN PERF 30V 9% 1000ML","本"],["Deoxide","Wella","Wella WLXN PERF 40V 12% 1000ML","本"],["Deoxide","Wella","Wella WLXN PERF 6V 1.9 % 1000ML","本"],["Deoxide","Wella","Wella WLXN PERF 30V 4% 1000ML","本"],["Deoxide","Wella","Wella WLXN PERF 30V 6% 1000ML","本"],["Deoxide","Wella","Wella PLEX STEP1500ML","本"],["Deoxide","Wella","Wella PLEX2STEP 2 500ML","本"],
+["Hair care","b-ex","LORETTA fabric premium Bece Care Oil","本"],["Hair care","b-ex","LORETTA AIMER Gloss Keep Spray","本"],["Hair care","b-ex","LORETTA AIMER Rock Hold Spray","本"],["Hair care","b-ex","LORETTA AIMER Styling Cream","本"],["Hair care","b-ex","LORETTA AIMER Styling Oil","本"],["Hair care","b-ex","LORETTA premium Bace Care Oil","本"],["Hair care","b-ex","LORETTA Bace Care Oil","本"],["Hair care","b-ex","LORETTA AIMER Wax","本"],["Hair care","BSC","BCS BALANCE CONDITIONER","本"],["Hair care","DEMI","UEVO JOUECARA Milky Smooth","本"],["Hair care","Wella","Scalp oil","本"],
+["Shampoo/Treatment","b-ex","Deep Layer 1 470g","本"],["Shampoo/Treatment","b-ex","Deep Layer 1 750g","本"],["Shampoo/Treatment","b-ex","Deep Layer 2 470ml","本"],["Shampoo/Treatment","b-ex","Deep Layer 2 750ml","本"],["Shampoo/Treatment","b-ex","Deep Layer 3 470g","本"],["Shampoo/Treatment","b-ex","Deep Layer 3 750g","本"],["Shampoo/Treatment","b-ex","Deep Layer 4 470g","本"],["Shampoo/Treatment","b-ex","Deep Layer 4 750g","本"],["Shampoo/Treatment","b-ex","Deep Layer 5 470g","本"],["Shampoo/Treatment","b-ex","Deep Layer 5 750g","本"],["Shampoo/Treatment","b-ex","Deep Layer E x G SP 80ml","本"],["Shampoo/Treatment","b-ex","Deep Layer E x S SP 80ml","本"],["Shampoo/Treatment","b-ex","Deep Layer H TM 40g","本"],["Shampoo/Treatment","b-ex","Deep Layer SHAMPOO XG 500ml","本"],["Shampoo/Treatment","b-ex","Deep Layer SHAMPOO XS 500ml","本"],["Shampoo/Treatment","b-ex","Deep Layer ExG TM 80g","本"],["Shampoo/Treatment","b-ex","Deep Layer ExS TM 80g","本"],["Shampoo/Treatment","b-ex","Deep Layer Treatment XG 470g","本"],["Shampoo/Treatment","b-ex","Deep Layer Treatment XS 470g","本"],["Shampoo/Treatment","b-ex","Deep Layer SHAMPOO XG 750ml","本"],["Shampoo/Treatment","b-ex","Deep Layer Treatment XG 750ml","本"],["Shampoo/Treatment","b-ex","Deep Layer E x G TR 80ml","本"],["Shampoo/Treatment","b-ex","Deep Layer E x S TR 80ml","本"],["Shampoo/Treatment","DEMI","COMPOSIO CUTICLE B 600ML","本"],["Shampoo/Treatment","DEMI","COMPOSIO PRO CMC-DELTA A 600ML","本"],["Shampoo/Treatment","DEMI","COMPOSIO PRO CX KERATIN A 600ML","本"],["Shampoo/Treatment","DEMI","COMPOSIO PRO CX-MATRIX B 600ML","本"],["Shampoo/Treatment","DEMI","COMPOSIO PRO LIPID 145ml","本"],["Shampoo/Treatment","Wella","SYS PRO COLOR SAVE BI-PHASE Conditioner 185ml","本"],["Shampoo/Treatment","Wella","SYS PRO COLOR SAVE Conditioner 1000ml","本"],["Shampoo/Treatment","Wella","SYS PRO COLOR SAVE Conditioner 200ml","本"],["Shampoo/Treatment","Wella","SYS PRO COLOR SAVE FLUID 125ml","本"],["Shampoo/Treatment","Wella","SYS PRO COLOR SAVE MASK 200ml","本"],["Shampoo/Treatment","Wella","SYS PRO COLOR SAVE MASK 400ml","本"],["Shampoo/Treatment","Wella","SYS PRO COLOR SAVE SHAMPOO 1000ml","本"],["Shampoo/Treatment","Wella","SYS PRO COLOR SAVE SHAMPOO 250ml","本"],["Shampoo/Treatment","Wella","SYS PRO HYDRATE Conditioner 1000ml","本"],["Shampoo/Treatment","Wella","SYS PRO HYDRATE Conditioner 200ml","本"],["Shampoo/Treatment","Wella","SYS PRO HYDRATE EMULSION 50ml","本"],["Shampoo/Treatment","Wella","SYS PRO HYDRATE MASK 200ml","本"],["Shampoo/Treatment","Wella","SYS PRO HYDRATE MASK 400ml","本"],["Shampoo/Treatment","Wella","SYS PRO HYDRATE QUENCHING MIST 125ml","本"],["Shampoo/Treatment","Wella","SYS PRO HYDRATE SHAMPOO 1000ml","本"],["Shampoo/Treatment","Wella","SYS PRO HYDRATE SHAMPOO 250ml","本"],["Shampoo/Treatment","Wella","SYS PRO REPAIR Conditioner 1000ml","本"],["Shampoo/Treatment","Wella","SYS PRO REPAIR Conditioner 200ml","本"],["Shampoo/Treatment","Wella","SYS PRO REPAIR EMULSION 50ml","本"],["Shampoo/Treatment","Wella","SYS PRO REPAIR MASK 200ml","本"],["Shampoo/Treatment","Wella","SYS PRO REPAIR MASK 400ml","本"],["Shampoo/Treatment","Wella","SYS PRO REPAIR PERFECT HAIR 150ml","本"],["Shampoo/Treatment","Wella","SYS PRO REPAIR SHAMPOO 1000ml","本"],["Shampoo/Treatment","Wella","SYS PRO REPAIR SHAMPOO 250ml","本"],["Shampoo/Treatment","Wella","SYS PRO Luxe oil Conditioner 1000ml","本"],["Shampoo/Treatment","Wella","SYS PRO Luxe oil Mask 400ml","本"],["Shampoo/Treatment","Wella","SYS PRO Luxe oil shampoo1000ml","本"],["Shampoo/Treatment","Wella","SYS PRO Luxe oil Mask 200ml","本"],["Shampoo/Treatment","Wella","SYS PRO Luxe oil shampoo250ml","本"],["Shampoo/Treatment","Wella","SYS PRO Luxe oil Elixir oil","本"],["Shampoo/Treatment","Wella","SYS PRO LUXE OIL SHAMPOO 250ml","本"],["Shampoo/Treatment","Wella","SYS PRO LUXE OIL SHAMPOO 1000ml","本"],["Shampoo/Treatment","Wella","SYS PRO LUXE OIL Conditioner 250ml","本"],["Shampoo/Treatment","Wella","WP INV COLOR BRILLIANCE SHAMPOO 1000 ml","本"],["Shampoo/Treatment","Wella","WP INV COLOR BRILLIANCE MASK 500 ML","本"],["Shampoo/Treatment","Wella","WP INV NTR ENRICH Conditioner 1000ML","本"],["Shampoo/Treatment","Wella","WP INV NTR ENRICH Mask 500ml","本"]
+];
+
+var OCC_PRODS = PRODS.map(function(r){return{cat:r[0],maker:r[1],name:r[2],unit:r[3]||''};});
+var LOR_PRODS = LOREAL_PRODS.map(function(r){return{cat:r[0],maker:r[1],name:r[2],unit:r[3]||''};});
+var products = OCC_PRODS.slice();
+var allQty = {OCC:{TL:{},PP:{},NG:{}},Loreal:{TL:{},PP:{},NG:{}}};
+var curCat = 'すべて';
+var curStore = null;
+var curSupplier = null;
+var SLABEL = {TL:'Thonglor (TL)',PP:'Phrom Phong (PP)',NG:'Ngamwongwan (NG)'};
+var SFILE = {TL:'Thonglor',PP:'Phrom_Phong',NG:'Ngamwongwan'};
+var SUPPLIER_NAME = {OCC:'OCC',Loreal:'Loreal'};
+var UNIT_EN = {'本':'piece(s)','ケース':'case(s)'};
+
+function Q(){return (curSupplier&&curStore)?(allQty[curSupplier][curStore]||{}):{};}
+function setQ(n,v){if(curSupplier&&curStore)allQty[curSupplier][curStore][n]=v;}
+function saveLS(){try{localStorage.setItem('fufu_v2',JSON.stringify(allQty));}catch(e){}}
+function loadLS(){try{var s=localStorage.getItem('fufu_v2');if(s){var d=JSON.parse(s);['OCC','Loreal'].forEach(function(sp){if(!allQty[sp])allQty[sp]={};['TL','PP','NG'].forEach(function(k){allQty[sp][k]=d[sp]&&d[sp][k]?d[sp][k]:{};});});}}catch(e){}}
+function totalN(){var q=Q(),n=0;Object.keys(q).forEach(function(k){if((q[k]||0)>0)n++;});return n;}
+function catN(cat){var q=Q(),n=0;products.forEach(function(p){if((cat==='すべて'||p.cat===cat)&&(q[p.name]||0)>0)n++;});return n;}
+function cats(){var c=['すべて'],s={};products.forEach(function(p){if(!s[p.cat]){s[p.cat]=1;c.push(p.cat);}});return c;}
+function e(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function eq(s){return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
+function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2500);}
+function showScreen(id){['inputScreen','confirmScreen','pdfScreen'].forEach(function(s){document.getElementById(s).classList.remove('active');});document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
+
+function renderCats(){
+  var el=document.getElementById('catTabs');
+  el.innerHTML=cats().map(function(c){
+    var n=catN(c);
+    return '<div class="cat-tab'+(c===curCat?' active':'')+'" onclick="selCat(\''+eq(c)+'\')">'+e(c)+(n>0?'<span class="badge">'+n+'</span>':'')+'</div>';
+  }).join('');
+}
+function selCat(cat){curCat=cat;renderCats();renderProds();}
+
+function renderProds(){
+  var el=document.getElementById('productList');
+  var q=Q();
+  var list=curCat==='すべて'?products:products.filter(function(p){return p.cat===curCat;});
+  var makers=[],mm={};
+  list.forEach(function(p){if(!mm[p.maker]){mm[p.maker]=[];makers.push(p.maker);}mm[p.maker].push(p);});
+  var html='';
+  makers.forEach(function(mk){
+    html+='<div class="maker-hdr">'+e(mk)+'</div>';
+    mm[mk].forEach(function(p){
+      var v=q[p.name]||0;
+      html+='<div class="product-row'+(v>0?' has-qty':'')+'" id="pr-'+e(p.name)+'">'
+        +'<div class="product-name">'+e(p.name)+'</div>'
+        +'<div class="qty-wrap">'
+        +'<button class="qty-btn" onclick="chQ(\''+eq(p.name)+'\',-1)">－</button>'
+        +'<input class="qty-input" type="number" min="0" value="'+v+'" onchange="chQI(\''+eq(p.name)+'\',this.value)" onfocus="this.select()">'
+        +'<button class="qty-btn" onclick="chQ(\''+eq(p.name)+'\',1)">＋</button>'
+        +(p.unit?'<span class="unit-label">'+e(p.unit)+'</span>':'')
+        +'</div></div>';
+    });
+  });
+  el.innerHTML=html||'<div style="padding:40px;text-align:center;color:#6B6860;">商品がありません</div>';
+  updBtn();
+}
+
+function updRow(name){
+  var v=Q()[name]||0;
+  var row=document.getElementById('pr-'+name);
+  if(!row)return;
+  row.classList.toggle('has-qty',v>0);
+  var inp=row.querySelector('.qty-input');
+  if(inp&&document.activeElement!==inp)inp.value=v;
+}
+function chQ(name,delta){var v=Math.max(0,(Q()[name]||0)+delta);setQ(name,v);saveLS();updRow(name);renderCats();updBtn();}
+function chQI(name,val){var v=Math.max(0,parseInt(val)||0);setQ(name,v);saveLS();updRow(name);renderCats();updBtn();}
+function updBtn(){var n=totalN();var b=document.getElementById('confirmBtn');b.disabled=n===0;b.textContent=n>0?'入力内容を確認 ('+n+'種) →':'入力内容を確認 →';}
+
+
+// supplier pills
+document.querySelectorAll('.supplier-pill').forEach(function(el){
+  el.addEventListener('click',function(){
+    document.querySelectorAll('.supplier-pill').forEach(function(p){p.classList.remove('active');});
+    el.classList.add('active');
+    curSupplier=el.dataset.supplier;
+    products = curSupplier==='Loreal' ? LOR_PRODS.slice() : OCC_PRODS.slice();
+    curStore=null;
+    curCat='すべて';
+    document.querySelectorAll('.store-pill').forEach(function(p){p.classList.remove('active');});
+    document.getElementById('catTabs').style.display='none';
+    var pl=document.getElementById('productList');pl.style.display='none';
+    updBtn();
+  });
+});
+
+// store pills
+document.querySelectorAll('.store-pill').forEach(function(el){
+  el.addEventListener('click',function(){
+    if(!curSupplier){toast('業者を選択してください');return;}
+    document.querySelectorAll('.store-pill').forEach(function(p){p.classList.remove('active');});
+    el.classList.add('active');
+    curStore=el.dataset.store;
+    curCat='すべて';
+    saveLS();
+    document.getElementById('catTabs').style.display='flex';
+    var pl=document.getElementById('productList');
+    pl.style.display='flex';pl.style.flexDirection='column';
+    renderCats();renderProds();
+  });
+});
+
+// clear
+document.getElementById('clearBtn').addEventListener('click',function(){
+  if(!curStore){toast('店舗を選択してください');return;}
+  if(totalN()===0){toast('入力済みの商品がありません');return;}
+  document.getElementById('clearModal').classList.add('show');
+});
+document.getElementById('clearCancelBtn').addEventListener('click',function(){document.getElementById('clearModal').classList.remove('show');});
+document.getElementById('clearDoBtn').addEventListener('click',function(){
+  document.getElementById('clearModal').classList.remove('show');
+  allQty[curSupplier][curStore]={};saveLS();renderProds();renderCats();updBtn();toast('クリアしました');
+});
+
+// confirm screen
+document.getElementById('confirmBtn').addEventListener('click',function(){
+  var q=Q();
+  var items=products.filter(function(p){return(q[p.name]||0)>0;});
+  if(!items.length)return;
+  document.getElementById('confirmSub').textContent=(curSupplier||'')+'　店舗: '+SLABEL[curStore]+'　|　'+items.length+'種類';
+  var cs=[],cm={};
+  items.forEach(function(p){if(!cm[p.cat]){cm[p.cat]=[];cs.push(p.cat);}cm[p.cat].push(p);});
+  var html='';
+  cs.forEach(function(cat){
+    html+='<div class="cat-block"><div class="cat-block-label">'+e(cat)+'</div><div class="conf-table">'
+      +'<div class="conf-row th"><span>商品名</span><span>単位</span><span>数量</span></div>';
+    cm[cat].forEach(function(p){
+      html+='<div class="conf-row"><div><div class="c-name">'+e(p.name)+'</div><div class="c-maker">'+e(p.maker)+'</div></div>'
+        +'<div class="c-unit">'+(p.unit||'—')+'</div><div class="c-qty">'+q[p.name]+'</div></div>';
+    });
+    html+='</div></div>';
+  });
+  document.getElementById('confirmBody').innerHTML=html;
+  showScreen('confirmScreen');
+});
+document.getElementById('backBtn').addEventListener('click',function(){showScreen('inputScreen');});
+
+// pdf screen
+document.getElementById('pdfBtn').addEventListener('click',function(){
+  var q=Q();
+  var items=products.filter(function(p){return(q[p.name]||0)>0;});
+  var now=new Date();
+  var ds=now.toLocaleDateString('en-GB');
+  var store=SLABEL[curStore];
+  var supplier=SUPPLIER_NAME[curSupplier]||curSupplier;
+  var cs=[],cm={};
+  items.forEach(function(p){if(!cm[p.cat]){cm[p.cat]=[];cs.push(p.cat);}cm[p.cat].push(p);});
+  var rows='';
+  cs.forEach(function(cat){
+    rows+='<tr class="cat-row"><td colspan="4" style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1A1916;padding:10px 10px 4px;border-top:2px solid #1A1916;">'+e(cat)+'</td></tr>';
+    cm[cat].forEach(function(p){
+      rows+='<tr><td class="gray">'+e(p.maker)+'</td><td>'+e(p.name)+'</td>'
+        +'<td class="r gray">'+(UNIT_EN[p.unit]||p.unit||'—')+'</td>'
+        +'<td class="r bold">'+q[p.name]+'</td></tr>';
+    });
+  });
+  var doc='<div class="pdf-doc-hdr"><h3>Purchase Order Request</h3><p>fufu Hair Salon — OCC Order</p></div>'
+    +'<div class="pdf-meta">'
+    +'<div class="pdf-meta-box"><div class="lbl">Branch</div><div class="val">'+e(store)+'</div></div>'
+    +'<div class="pdf-meta-box"><div class="lbl">Date</div><div class="val">'+ds+'</div></div>'
+    +'</div>'
+    +'<table class="pdf-tbl"><thead><tr><th style="color:#1A1916;border-bottom:2px solid #1A1916;font-size:9px;text-transform:uppercase;letter-spacing:.07em;">Brand</th><th style="color:#1A1916;border-bottom:2px solid #1A1916;font-size:9px;text-transform:uppercase;letter-spacing:.07em;">Product</th><th class="r" style="color:#1A1916;border-bottom:2px solid #1A1916;font-size:9px;text-transform:uppercase;letter-spacing:.07em;text-align:right;">Unit</th><th class="r" style="color:#1A1916;border-bottom:2px solid #1A1916;font-size:9px;text-transform:uppercase;letter-spacing:.07em;text-align:right;">Qty</th></tr></thead>'
+    +'<tbody>'+rows+'<tr class="total-row"><td colspan="3">Total lines</td><td class="r">'+items.length+'</td></tr></tbody></table>'
+    +'<div class="pdf-footer"><span>fufu Hair Salon — '+supplier+'</span><span>'+ds+'</span></div>';
+  document.getElementById('pdfDoc').innerHTML=doc;
+  document.getElementById('pdfSub').textContent=(curSupplier||'')+'　店舗: '+store+'　|　'+items.length+'種類';
+  var d=now.getDate().toString().padStart(2,'0');
+  var m=(now.getMonth()+1).toString().padStart(2,'0');
+  var y=now.getFullYear();
+  document.title='order_'+(curSupplier||'')+'_'+SFILE[curStore]+'_'+d+m+y;
+  showScreen('pdfScreen');
+});
+document.getElementById('pdfBackBtn').addEventListener('click',function(){showScreen('confirmScreen');});
+document.getElementById('printBtn').addEventListener('click',function(){window.print();});
+
+// xlsx upload
+document.getElementById('fileInput').addEventListener('change',function(e){
+  var file=e.target.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      var wb=XLSX.read(ev.target.result,{type:'array'});
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      var start=-1;
+      for(var i=0;i<rows.length;i++){if(rows[i].indexOf('カテゴリ')>=0){start=i+1;break;}}
+      if(start>0&&String(rows[start][0]).startsWith('例'))start++;
+      if(start<0){toast('フォーマットエラー');return;}
+      var np=[];
+      for(var i=start;i<rows.length;i++){var r=rows[i];if(r[0]&&r[1]&&r[2])np.push({cat:String(r[0]).trim(),maker:String(r[1]).trim(),name:String(r[2]).trim(),unit:String(r[3]||'').trim()});}
+      if(!np.length){toast('商品データが見つかりません');return;}
+      products=np;allQty={TL:{},PP:{},NG:{}};saveLS();curCat='すべて';
+      if(curStore){renderCats();renderProds();}
+      toast('✓ '+np.length+'商品を読み込みました');
+    }catch(err){toast('読み込みエラー');}
+  };
+  reader.readAsArrayBuffer(file);
+  this.value='';
+});
+
+loadLS();
+updBtn();
+</script>
+</body>
+</html>
